@@ -1,0 +1,10 @@
+.pio/
+dist/
+droidcore_tests
+src/body/WebAssets.h
+src/body/Secrets.h
+scratch/
+.vscode/
+.DS_Store
+__pycache__/
+*.pyc

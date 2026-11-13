@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128"><title>R2-AU scared</title>
+  <g transform="translate(6.4 12.8) scale(0.9)">
+  <defs><clipPath id="dome"><path d="M20 84 A44 52 0 0 1 108 84 V91 H20 Z"/></clipPath></defs>
+  <!-- body, as wide as the dome -->
+  <path d="M20 136 V86 H108 V136" fill="#f7f9fa" stroke="#1b2530" stroke-width="4.5" stroke-linejoin="round"/>
+  <rect x="34" y="96" width="60" height="8" rx="3" fill="#4cb8cf" stroke="#1b2530" stroke-width="3"/>
+  <rect x="34" y="110" width="27" height="8" rx="3" fill="#4cb8cf" stroke="#1b2530" stroke-width="3"/>
+  <rect x="67" y="110" width="27" height="8" rx="3" fill="#4cb8cf" stroke="#1b2530" stroke-width="3"/>
+  <!-- shoulders: tall caps beside the body, rounded at the top, as on the
+       real droid; a silver hub shows between each cap and the body -->
+  <rect x="13" y="94" width="10" height="34" rx="2.5" fill="#c3ccd3" stroke="#1b2530" stroke-width="3"/>
+  <rect x="105" y="94" width="10" height="34" rx="2.5" fill="#c3ccd3" stroke="#1b2530" stroke-width="3"/>
+  <path d="M-3 136 V98 Q-3 88 6 88 H7 Q16 88 16 98 V136 Z" fill="#f7f9fa" stroke="#1b2530" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="M112 136 V98 Q112 88 121 88 H122 Q131 88 131 98 V136 Z" fill="#f7f9fa" stroke="#1b2530" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="M11 95 V136 M117 95 V136" stroke="#c3ccd3" stroke-width="3"/>
+  <!-- dome -->
+  <g transform="translate(0 0) rotate(0 64 88)">
+    <path d="M20 84 A44 52 0 0 1 108 84 V91 H20 Z" fill="#d4ad62"/>
+    <g clip-path="url(#dome)">
+      <rect x="16" y="66" width="16" height="9" fill="#4cb8cf" stroke="#1b2530" stroke-width="2.5"/>
+      <rect x="36" y="66" width="18" height="9" fill="#4cb8cf" stroke="#1b2530" stroke-width="2.5"/>
+      <rect x="74" y="66" width="18" height="9" fill="#4cb8cf" stroke="#1b2530" stroke-width="2.5"/>
+      <rect x="96" y="66" width="16" height="9" fill="#4cb8cf" stroke="#1b2530" stroke-width="2.5"/>
+      <rect x="16" y="78" width="96" height="16" fill="#b08a45" stroke="#1b2530" stroke-width="2.5"/>
+      <path d="M36 50 Q42 38 54 34" fill="none" stroke="#fff3d6" stroke-width="3.5" stroke-linecap="round" opacity=".8"/>
+    </g>
+    <path d="M20 84 A44 52 0 0 1 108 84 V91 H20 Z" fill="none" stroke="#1b2530" stroke-width="4.5" stroke-linejoin="round"/>
+    <!-- eye: lens in a teal surround -->
+    <rect x="40" y="42" width="25" height="22" rx="5" fill="#4cb8cf" stroke="#1b2530" stroke-width="3.5"/>
+    <circle cx="52.5" cy="53" r="8" fill="#16202a" stroke="#1b2530" stroke-width="3"/>
+    <circle cx="49.5" cy="50" r="2.5" fill="#ffffff"/>
+    <!-- PSI: the emotion light -->
+    <circle cx="78" cy="56" r="10" fill="#fff3b0" opacity=".6"/>
+    <circle cx="78" cy="56" r="6.5" fill="#f2c200" stroke="#1b2530" stroke-width="3"/>
+    <circle cx="76" cy="54" r="2" fill="#fff3b0"/>
+    <!-- holoprojector -->
+    <rect x="66" y="35" width="10" height="9" rx="3" fill="#c3ccd3" stroke="#1b2530" stroke-width="3"/>
+    <circle cx="71" cy="39.5" r="1.8" fill="#1b2530"/>
+  </g>
+  </g><path d="M36 6 l6 5 l-6 4 l6 5" fill="none" stroke="#1b2530" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="M36 6 l6 5 l-6 4 l6 5" fill="none" stroke="#f2c200" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M92 6 l-6 5 l6 4 l-6 5" fill="none" stroke="#1b2530" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="M92 6 l-6 5 l6 4 l-6 5" fill="none" stroke="#f2c200" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M60 3 H68 L66 20 H62 Z" fill="#f2c200" stroke="#1b2530" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64" cy="26" r="3.6" fill="#f2c200" stroke="#1b2530" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><path d="M104 28 C108 34 109 37 108 39 C107 42 101 42 100 39 C99 37 100 34 104 28 Z" fill="#bfe6f2" stroke="#1b2530" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><path d="M14 44 v14 M8 48 v8 M114 44 v14 M120 48 v8" fill="none" stroke="#1b2530" stroke-width="3.5" stroke-linecap="round"/></svg>
