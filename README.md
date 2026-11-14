@@ -32,8 +32,7 @@ pio run -e body_s3 -t upload        # or dome_c3, body_c3
 pio device monitor -e body_s3
 ```
 
-- **S3:** use its native USB port (often labelled USB, not UART/COM). The
-  console runs there, leaving all UARTs free.
+- **S3:** use its native USB port (often labelled USB, not UART/COM).
 - **C3 won't take an upload** ("No serial data received"): hold **BOOT**, tap
   **RESET**, let go of BOOT, upload, then press **RESET**.
 - **More than one board plugged in:** add `--upload-port` (`pio device list`
@@ -52,7 +51,7 @@ g++ -std=c++17 -Wall -Wextra -I lib/DroidCore/src -I src/body host_tests/test_dr
 
 | GPIO | To |
 | --- | --- |
-| 4 | DS-650 #1 (right hand) SBUS-A signal. No inverter needed |
+| 4 | DS-650 #1 (right hand) SBUS-A signal; its + and − on the breakout's 5V0 and GND |
 | 9 / 10 | Left / right VESC PPM signal |
 | 17 | Teensy pin 28 (RX7) |
 | 18 | Teensy pin 29 (TX7); only needed for replies |
@@ -61,19 +60,13 @@ g++ -std=c++17 -Wall -Wextra -I lib/DroidCore/src -I src/body host_tests/test_dr
 | 40 | Roam-a-Dome command serial **TX** |
 | GND | Common with the receiver, both VESC signal grounds, the Teensy and the Roam-a-Dome |
 
-- The receiver runs on 5 V from the breakout's 5V0, which only comes on with
-  the barrel jack powered.
-- The Teensy pins match `Connection=Serial7` and `BaudRate=9600` in
-  `Config.txt` on its SD card. HCR's default is `Serial1`, so check a
-  replacement card.
+Teensy `Config.txt`: `Connection=Serial7`, `BaudRate=9600`.
 
 Console keys: `r` radio and drive monitor, `v` versions and Wi-Fi details,
 `s` random sound, `j` / `l` spin the dome, `<...>` raw HCR command, `>...`
 raw Roam-a-Dome command, `:` settings, `@` link, `h` help.
 
 ## Dome C3
-
-ESP32-C3 Super Mini. Every signal is on its 5–10 / 20 / 21 side.
 
 | GPIO | To |
 | --- | --- |
@@ -82,17 +75,16 @@ ESP32-C3 Super Mini. Every signal is on its 5–10 / 20 / 21 side.
 | 10 | Pixel Shifter DAT (holo LEDs) |
 | 20 | DS-650 #2 (left hand) SBUS, through 1 kΩ |
 | 3.3 V | PCA9685 VCC, Pixel Shifter V |
-| 5V | From the dome's 5 V buck; the receiver's + can come from the same row |
+| 5V / GND | From the dome's 5 V buck; also the receiver's + and − |
 
 Leave 8 and 9 (strapping) and 21 (boot messages) unconnected.
 
-- **Panels:** the dome Maestro's own sequences, ported by
-  `tools/gen_servo_sequences.py`, played as Set Target commands.
+- **Panels:** 11 built-in sequences played on the Maestro
+  (`tools/maestro/README.md`).
 - **Holoprojectors:** Flthy HP v1.8 commands (`A0033|5`, `F0028|4`, `S1`)
-  handled on the C3 (`HoloEngine.h`). PCA9685
-  channels: front X/Y 0/1, top 2/3, rear 4/5. The LED jewels are chained
-  front, top, rear, 7 LEDs each.
-- **Logic:** commands go to the logic board unchanged, ending in CR
+  (`HoloEngine.h`). PCA9685 channels: front X/Y 0/1, top 2/3, rear 4/5. LED
+  jewels chained front, top, rear, 7 LEDs each.
+- **Logic:** Logic Engine commands passed to the logic board
   (`~RTLE990505`, `0T3`).
 - **Left stick X** (CH1) goes to the S3 as dome spin.
 
@@ -130,8 +122,7 @@ Each node sends an encrypted heartbeat every 100 ms on channel 1 and counts a
 peer as down after 500 ms of silence. The drive doesn't depend on the link,
 and the link stays off until a node has been set up.
 
-The key and peer addresses are stored on each board, entered on the USB
-console, so the key never goes in the repo:
+Set the key and peers on each board's USB console:
 
 1. Flash each board and type `@`. Note the MAC on the `this node` line.
 2. On one board, `@key new`. Copy the key.
@@ -182,9 +173,8 @@ sequence. Each frame has a duration and, for each servo (4 pies, 7 panels,
 frame or moving a slider moves the real servo while the drive is disarmed.
 
 They're stored on the S3 (`/sequences.bin`, up to 24 sequences of 40 frames)
-and played from there as single-servo moves, so the C3s need nothing extra.
-Positions follow each servo's endpoints, so retuning a servo fixes every
-sequence that uses it.
+and played from there. Positions are relative to each servo's endpoints, so
+retuning a servo carries into every sequence.
 
 ### Backup and restore
 
@@ -240,8 +230,7 @@ CH1 and CH2 carry, and CCS holds throttle in a way the droid can't detect.
 
 ### Ramping
 
-Set in `rampConfig()`. The firmware smooths the stick before mixing, so both
-feet change together.
+Set in `rampConfig()`, applied to the stick before mixing.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
@@ -256,13 +245,12 @@ Speed 3 at full stick is about 0.75 m/s (2,100 eRPM). Speed 1 tops out near
 ### VESC settings
 
 Both VESCs: FOC with Hall sensors, PID speed mode at about 2,100 max ERPM,
-speed PID Kp 0.003 / Ki 0.008, one VESC inverted. The firmware does the
-curve and ramp, so the VESC's own are flat or short:
+speed PID Kp 0.003 / Ki 0.008, one VESC inverted, and:
 
 | Setting | Value | Why |
 | --- | --- | --- |
 | App → PPM → pulse mapping | 544 / 1472 / 2400 µs | What the S3 sends |
-| App → PPM → throttle expo | **0** | The firmware applies expo to throttle only; a VESC curve would also bend each wheel in turns |
+| App → PPM → throttle expo | **0** | The firmware applies expo |
 | App → PPM → ramp time pos / neg | **0.2 s** | Backstop only |
 | Motor → PID → speed PID ramp, if shown | **~10,000 eRPM/s** (about 0.2 s) | Same |
 | App → General → timeout | 1 s | Stops the feet if the pulses stop |
@@ -347,8 +335,7 @@ tagged for a different board.
    as its rules say, and put the same version in `VERSION`.
 2. Commit, then `pio run -e body_s3 -e dome_c3 -e body_c3`. The build part
    should have no `-dirty`.
-3. Update the C3s first and the S3 last, so the page is never newer than the
-   boards.
+3. Update the C3s first and the S3 last.
 
 ## Bench tests
 
