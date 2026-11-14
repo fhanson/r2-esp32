@@ -1,7 +1,6 @@
 #pragma once
-// Pololu Maestro over serial, compact protocol (what the Mega's library sent
-// to the same board). Only Set Target is used: the Maestro is a plain servo
-// driver now, and the sequences run on this node.
+// Pololu Maestro over serial, compact protocol. Only Set Target is used: the
+// sequences run on this node.
 
 #include <Arduino.h>
 

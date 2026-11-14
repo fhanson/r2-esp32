@@ -980,7 +980,7 @@ function renderMenu() {
 let controlTab = "sounds";
 try { controlTab = localStorage.getItem("r2au-control-tab") || "sounds"; } catch (e) {}
 
-// The Mega's Xbox sound set.
+// Sound tiles.
 const wav = (name, file) => ({ name, sub: String(file).padStart(4, "0"), act: { kind: "wav", file } });
 const rnd = (name, a, b) => ({ name, sub: `${String(a).padStart(4, "0")}–${String(b).padStart(4, "0")}`, act: { kind: "random", a, b } });
 const im = (t, img) => ({ ...t, img });
@@ -1040,7 +1040,7 @@ function defaultAnimList() {
     if (logic) steps.push({ atMs: 0, kind: K.Logic, a: 0, b: 0, text: logic });
     return { id: 200 + i, name, icon, steps };
   }).concat([{
-    // Beyond the Padawan set: a chortle and a shake of the head. Dome steps:
+    // Chortle No: a chortle and a shake of the head. Dome steps:
     // a = action | speed << 8 (1 = face an angle, 0 = look ahead), b = angle.
     id: 216, name: "Chortle No", icon: "sfx-chuckle", steps: [
       snd(2),
@@ -1426,6 +1426,7 @@ document.addEventListener("keydown", (e) => {
 document.addEventListener("input", (e) => { if (!wifiInput(e) && !sqInput(e, false)) editorInput(e, false); });
 document.addEventListener("change", (e) => {
   if (e.target.id === "fw-file") { fwPick(e.target.files[0]); e.target.value = ""; return; }
+  if (e.target.id === "bk-file") { bkPick(e.target.files[0]); e.target.value = ""; return; }
   if (sqInput(e, true)) return;
   if (editorInput(e, true)) return;
   const inp = e.target.closest("[data-num]");
@@ -1617,7 +1618,7 @@ function logicText(l) {
   if (ALL_TARGETS.every((d) => t.includes(d))) return `~RTLE${v}`;
   return t.map((d) => `~RTLE${d * 1000000 + v}`).join(";");
 }
-// The JawaLite presets the Mega used, as effects for the preview.
+// JawaLite logic presets, as effects for the preview.
 const JAWA_FX = { "0T3": 1, "0T4": 2, "0T5": 11, "0T11": 4 };
 
 // The displays as LED grids, for the preview. Sizes are close to the RSeries
@@ -2865,13 +2866,188 @@ function wifiClick(e) {
   return false;
 }
 
+// Backup and restore, done on the page with the messages the S3 already
+// takes. A backup holds the settings changed from their defaults, every
+// animation and your servo sequences. Not the Wi-Fi name and password.
+const BACKUP_FORMAT = "r2au-backup";
+let bk = null;  // { phase, file, data, summary, done, total, message }
+const backupReady = () => droid.connected && live.keys.length > 0 && live.gotAnims && live.gotSeqs;
+function makeBackup() {
+  const settings = {};
+  for (const k of live.keys) if (k && live.overridden[k]) settings[k] = droid.settings[k];
+  return {
+    format: BACKUP_FORMAT, version: 1, created: new Date().toISOString(),
+    firmware: droid.versions["body-s3"] ? droid.versions["body-s3"].version : "",
+    settings,
+    animations: animList.map((a) => ({ id: a.id, name: a.name, icon: a.icon || "",
+      steps: a.steps.map((x) => ({ atMs: x.atMs, kind: x.kind, a: x.a, b: x.b, text: x.text || "" })) })),
+    sequences: Object.values(customSeqs).map((q) => ({ id: q.id, name: q.name, frames: q.frames.map((f) => ({ ms: f.ms, pos: f.pos })) })),
+  };
+}
+function downloadBackup() {
+  const blob = new Blob([JSON.stringify(makeBackup(), null, 1)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `r2au-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  announce("Backup downloaded");
+}
+// Throws a message if the file can't be a backup.
+function parseBackup(text) {
+  let d;
+  try { d = JSON.parse(text); } catch (err) { throw new Error("That file isn't a backup (it isn't JSON)."); }
+  const int = (x) => Number.isInteger(x);
+  if (!d || d.format !== BACKUP_FORMAT) throw new Error("That file isn't an R2-AU backup.");
+  if (d.version !== 1) throw new Error(`This backup is format ${d.version}; this page reads format 1.`);
+  if (typeof d.settings !== "object" || !Array.isArray(d.animations) || !Array.isArray(d.sequences)) throw new Error("The backup is incomplete.");
+  if (Object.values(d.settings).some((v) => !int(v))) throw new Error("A setting in the backup isn't a whole number.");
+  if (d.animations.length > 48 || d.animations.some((a) => !int(a.id) || a.id < 200 || typeof a.name !== "string" || !Array.isArray(a.steps) || a.steps.length > LIM.steps
+      || a.steps.some((x) => !int(x.atMs) || !int(x.kind) || !int(x.a) || !int(x.b) || typeof x.text !== "string"))) {
+    throw new Error("An animation in the backup is damaged.");
+  }
+  if (d.sequences.length > SEQ_LIM.count || d.sequences.some((q) => !int(q.id) || q.id < SEQ_LIM.first || q.id >= SEQ_LIM.first + SEQ_LIM.count
+      || typeof q.name !== "string" || !Array.isArray(q.frames) || !q.frames.length || q.frames.length > SEQ_LIM.frames
+      || q.frames.some((f) => !int(f.ms) || !Array.isArray(f.pos) || f.pos.length !== SEQ_SERVOS.length
+        || f.pos.some((x) => x !== null && (!int(x) || x < -125 || x > 125))))) {
+    throw new Error("A servo sequence in the backup is damaged.");
+  }
+  return d;
+}
+function bkPick(file) {
+  if (!file) return;
+  file.text().then((text) => {
+    try {
+      const data = parseBackup(text);
+      const unknown = Object.keys(data.settings).filter((k) => live.settingIndex[k] === undefined).length;
+      bk = { phase: "confirm", file, data, unknown };
+    } catch (err) {
+      bk = { phase: "failed", file, message: err.message };
+    }
+    bkShow(bk.phase === "confirm" ? `${file.name}: ready to restore` : bk.message);
+  });
+}
+// The S3 handles a few messages per loop; pacing keeps its queue from filling.
+const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+let bkWaiter = null;  // { request, resolve } for the reply restore is waiting on
+function bkReply(request, result) {
+  if (!bkWaiter || bkWaiter.request !== request) return false;
+  bkWaiter.resolve(result);
+  bkWaiter = null;
+  return true;
+}
+function bkAwait(request) {
+  return Promise.race([new Promise((resolve) => { bkWaiter = { request, resolve }; }), pause(5000).then(() => "timeout")]);
+}
+async function bkSend(w) {
+  if (!live.ws || droid.armed) throw new Error(droid.armed ? "The drive was armed: restore stopped part way." : "The droid disconnected: restore stopped part way.");
+  live.send(w);
+  bk.done++;
+  if (bk.done % 5 === 0) renderSoon();
+  await pause(12);
+}
+async function bkCommit(w, request, what) {
+  const reply = bkAwait(request);
+  await bkSend(w);
+  const r = await reply;
+  if (r !== 0) throw new Error(`The droid refused ${what}${r === "timeout" ? " (no answer)" : ""}. Restore stopped part way; run it again.`);
+}
+async function restoreBackup() {
+  const d = bk.data;
+  const keys = live.keys.filter(Boolean);
+  bk.phase = "running";
+  bk.done = 0;
+  bk.total = keys.length + Object.keys(customSeqs).length + animList.length
+    + d.sequences.reduce((t, q) => t + 2 + q.frames.length, 0) + d.animations.reduce((t, a) => t + 2 + a.steps.length, 0);
+  bkShow("Restoring");
+  try {
+    for (const k of keys) {  // settings: the backup's values, defaults for the rest
+      const index = live.settingIndex[k];
+      if (k in d.settings) await bkSend(new W().u8(UI.SetSetting).u8(index).i32(d.settings[k]));
+      else await bkSend(new W().u8(UI.ClearSetting).u8(index));
+    }
+    for (const id of Object.keys(customSeqs)) await bkCommit(new W().u8(UI.DeleteSequence).u8(+id), UI.DeleteSequence, "to delete a sequence");
+    for (const q of d.sequences) {
+      await bkSend(new W().u8(UI.SeqHeader).u8(q.id).u8(q.frames.length).text(q.name));
+      for (let i = 0; i < q.frames.length; i++) {
+        const f = q.frames[i], w = new W().u8(UI.SeqFrame).u8(q.id).u8(i).u16(f.ms);
+        f.pos.forEach((p) => w.u8(p === null ? 0x80 : p & 255));
+        await bkSend(w);
+      }
+      await bkCommit(new W().u8(UI.SeqCommit).u8(q.id), UI.SeqCommit, `sequence “${q.name}”`);
+    }
+    const keep = new Set(d.animations.map((a) => a.id));
+    for (const a of animList) if (!keep.has(a.id)) await bkSend(new W().u8(UI.DeleteAnimation).u16(a.id));
+    for (const a of d.animations) {
+      await bkSend(new W().u8(UI.AnimHeader).u16(a.id).u8(a.steps.length).text(a.name).text(a.icon));
+      for (let i = 0; i < a.steps.length; i++) await bkSend(new W().u8(UI.AnimStep).u16(a.id).u8(i).step(a.steps[i]));
+      await bkCommit(new W().u8(UI.AnimCommit).u16(a.id), UI.AnimCommit, `animation “${a.name}”`);
+    }
+    bk.phase = "done";
+    bk.message = `Restored ${Object.keys(d.settings).length} changed settings, ${d.animations.length} animations and ${d.sequences.length} servo sequences.`;
+  } catch (err) {
+    bk.phase = "failed";
+    bk.message = err.message;
+  }
+  bkWaiter = null;
+  bkShow(bk.message);
+}
+function bkShow(text) {
+  render();
+  if (text) announce(text);
+  const t = document.getElementById("bk-go") || document.getElementById("bk-close") || document.getElementById("bk-card");
+  if (t) t.focus();
+}
+function bkClick(e) {
+  const t = e.target;
+  if (t.closest("#bk-save")) { downloadBackup(); return true; }
+  if (t.closest("#bk-load")) { document.getElementById("bk-file").click(); return true; }
+  if (t.closest("#bk-go")) { if (bk && bk.phase === "confirm") restoreBackup(); return true; }
+  if (t.closest("#bk-close")) {
+    bk = null;
+    render();
+    const b = document.getElementById("bk-load");
+    if (b) b.focus();
+    return true;
+  }
+  return false;
+}
+function renderBkPanel(lock) {
+  if (!bk) return "";
+  const card = (body, bad) => `<div class="fwcard${bad ? " bad" : ""}" id="bk-card" tabindex="-1"><b>${esc(bk.file.name)}</b>${body}</div>`;
+  if (bk.phase === "confirm") {
+    const d = bk.data, when = d.created ? new Date(d.created).toLocaleString() : "an unknown date";
+    const s3 = droid.versions["body-s3"];
+    const notes = [`Made ${esc(when)}${d.firmware ? ` on firmware v${esc(d.firmware)}` : ""}.`];
+    if (d.firmware && s3 && d.firmware.split(".")[0] !== s3.version.split(".")[0]) notes.push(`The droid runs v${esc(s3.version)}, a different major version: some items may be refused.`);
+    if (bk.unknown) notes.push(`${bk.unknown} setting${bk.unknown === 1 ? "" : "s"} in it ${bk.unknown === 1 ? "isn't" : "aren't"} on this droid and will be skipped.`);
+    return card(`<p>${Object.keys(d.settings).length} changed settings, ${d.animations.length} animations, ${d.sequences.length} servo sequences.</p>
+      ${notes.map((n) => `<p class="note-sm">${n}</p>`).join("")}
+      <p class="note-sm"><b>Restoring replaces</b> every setting, animation and servo sequence of yours on the droid with the backup's. The Wi-Fi name and password stay as they are.</p>
+      <div class="actions"><button class="btn" id="bk-go" ${lock || !backupReady() ? "disabled" : ""}>Restore</button>
+      <button class="btn secondary" id="bk-close">Cancel</button></div>`);
+  }
+  if (bk.phase === "running") {
+    const p = Math.min(100, Math.round(bk.done * 100 / Math.max(1, bk.total)));
+    return card(`<p>Restoring · ${p}%. Keep this page open.</p>
+      <div class="fwbar" role="progressbar" aria-label="Restore progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${p}"><i style="width:${p}%"></i></div>`);
+  }
+  return card(`<p>${esc(bk.message)}</p><div class="actions"><button class="btn secondary" id="bk-close">${bk.phase === "done" ? "Done" : "Close"}</button></div>`, bk.phase === "failed");
+}
 function renderBackup() {
-  return `<div class="stub"><p>One file holds the sequence library and every saved setting. Restoring replaces both on the droid.</p>
+  const lock = lockReason("backup");
+  const busy = bk && bk.phase === "running";
+  const why = lock || (!droid.connected ? "Join the droid's Wi-Fi to back up or restore" : !backupReady() ? "Waiting for the droid's settings and library" : "");
+  return `<div class="stub"><p>One file holds the settings you've changed, every animation and your servo sequences. Restoring puts all of that back as it was. The Wi-Fi name and password aren't included.</p>
+    ${renderBkPanel(lock)}
+    ${why ? `<p class="note">${why}.</p>` : ""}
+    <input type="file" id="bk-file" accept=".json,application/json" hidden>
     <div class="actions">
-      <button class="btn" id="bk-save" disabled>Download backup</button>
-      <button class="btn secondary" id="bk-load" disabled>Restore from file…</button>
-    </div>
-    <p>Available once the droid is connected.</p></div>`;
+      <button class="btn" id="bk-save" ${why || busy ? "disabled" : ""}>Download backup</button>
+      <button class="btn secondary" id="bk-load" ${why || busy ? "disabled" : ""}>Restore from file…</button>
+    </div></div>`;
 }
 
 // Versions as Version.h compares them: numbers, then a release beats its
@@ -3341,6 +3517,7 @@ document.addEventListener("click", (e) => {
   if (wifiClick(e)) return;
   if (fwClick(e)) return;
   if (sqClick(e)) return;
+  if (bkClick(e)) return;
   if (settingClick(e)) return;
   const tab = e.target.closest("[data-tab]");
   if (tab) { controlTab = tab.dataset.tab; try { localStorage.setItem("r2au-control-tab", controlTab); } catch (err) {} render(); return; }
@@ -3399,6 +3576,9 @@ class Reader {  // little-endian reader
 const live = {
   ws: null,
   settingIndex: {},  // key -> index on the droid
+  overridden: {},    // key -> true when saved away from its default
+  gotAnims: false,
+  gotSeqs: false,
   keys: [],          // index -> key
   seqFrames: {},
   incoming: [],      // animations arriving
@@ -3431,7 +3611,7 @@ function connect() {
     render();
   };
   ws.onclose = () => {
-    if (live.ws === ws) { live.ws = null; droid.connected = false; render(); }
+    if (live.ws === ws) { live.ws = null; droid.connected = false; live.gotAnims = live.gotSeqs = false; render(); }
     setTimeout(connect, 2000);
   };
   ws.onmessage = (ev) => handleMessage(ev.data);
@@ -3458,15 +3638,16 @@ function handleMessage(buf) {
     if (was !== [droid.armed, droid.enableSwitch].join()) render();  // locks may change
   } else if (type === UI.SettingInfo) {
     const index = r.u8(); r.u8();
-    const value = r.i32(), def = r.i32(); r.i32(); r.i32(); r.u8();
-    const key = r.text();
+    const value = r.i32(), def = r.i32(); r.i32(); r.i32();
+    const over = !!r.u8(), key = r.text();
+    live.overridden[key] = over;
     live.settingIndex[key] = index;
     live.keys[index] = key;
     droid.settings[key] = value;
     defaults[key] = def;
   } else if (type === UI.SettingValue) {
     const key = live.keys[r.u8()];
-    if (key) { droid.settings[key] = r.i32(); renderSoon(); }
+    if (key) { droid.settings[key] = r.i32(); live.overridden[key] = !!r.u8(); renderSoon(); }
   } else if (type === UI.ServoSequenceInfo) {
     const index = r.u8(), frames = r.u8(), ms = r.u32(), name = r.text();
     live.incomingSeqs[index] = name;
@@ -3486,10 +3667,12 @@ function handleMessage(buf) {
       live.incomingSeqs = [];
       customSeqs = Object.fromEntries(Object.values(live.incomingCustom).filter((q) => q.frames.every(Boolean)).map((q) => [q.id, q]));
       live.incomingCustom = {};
+      live.gotSeqs = true;
       seqListArrived();
     }
     if (list === UI.ListAnimations) {
       animList = live.incoming.map((a) => ({ ...a, steps: a.steps.filter(Boolean) }));
+      live.gotAnims = true;
       live.incoming = [];
       if (draft && !draft.dirty) draft = null;   // reopen from the droid's copy
     }
@@ -3516,6 +3699,7 @@ function handleMessage(buf) {
     fwStatus(node, state, percent, r.text());
   } else if (type === UI.Result) {
     const request = r.u8(), result = r.u8();
+    if (bkReply(request, result)) return;
     if (result === 0 && request === UI.AnimCommit) toast("Animation saved");
     else if (request === UI.SeqCommit) seqSaved(result);
     else if (result === 0 && request === UI.CopySequence) toast("Copied: it's at the end of the list, ready to edit");

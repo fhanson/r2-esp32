@@ -184,7 +184,7 @@ static void testMixer() {
   s = mixDrive(1, 0, 50.0f / 127.0f, m);
   CHECK(near(s.left, 50.0f / 127.0f));
 
-  // No spin in place by default (Padawan360 PWM behaviour).
+  // No spin in place by default.
   s = mixDrive(0, 1, 1, m);
   CHECK(s.left == 0 && s.right == 0);
   m.spinInPlace = true;
@@ -222,7 +222,7 @@ static void testPulses() {
   CHECK(speedToPulseUs(0, r) == 1472);
   CHECK(speedToPulseUs(1, r) == 2400);
   CHECK(speedToPulseUs(-1, r) == 544);
-  CHECK(servoAngleToPulseUs(90, r) == 1472);  // Mega's stopFeet() write(90)
+  CHECK(servoAngleToPulseUs(90, r) == 1472);
   CHECK(servoAngleToPulseUs(0, r) == 544);
   CHECK(servoAngleToPulseUs(180, r) == 2400);
 }
@@ -341,7 +341,7 @@ static void testHcrCommands() {
   CHECK(hcrPlayWav(b, 8, 'A', 25) == 0);
   CHECK(hcrPlayWav(b, 9, 'A', 25) == 8);
 
-  // Startup matches the Mega's values.
+  // Startup values.
   HcrSetup s;
   s.happy = 89;
   s.sad = 22;

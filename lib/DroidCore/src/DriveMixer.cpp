@@ -12,7 +12,7 @@ float absf(float v) { return v < 0 ? -v : v; }
 float steeringCurve(float x, float factor) {
   const float m = clampf(absf(x), 0.0f, 1.0f);
   if (factor < 0.0f) factor = 0.0f;
-  // Padawan360 works on a 0..100 scale: |X| * sqrt(|X| + F) / (100 * sqrt(100 + F)).
+  // On a 0..100 scale: |X| * sqrt(|X| + F) / (100 * sqrt(100 + F)).
   const float out = m * sqrtf(100.0f * m + factor) / sqrtf(100.0f + factor);
   return x < 0 ? -out : out;
 }

@@ -105,11 +105,8 @@ size_t decodeStep(const uint8_t* data, size_t length, AnimStep& step);  // bytes
 size_t encodeAnimation(const Animation& anim, uint8_t* out, size_t cap);
 bool decodeAnimation(const uint8_t* data, size_t length, Animation& anim);
 
-// The default library: the 16 animations the Padawan's buttons fired, from
-// the Mega's last sketch, then Chortle No (chortle and a head shake).
-// Holo commands use the effect each button was meant to show (the Mega's
-// FlthyHP library sent a few wrong codes: its "short circuit" was solid
-// yellow and its "rainbow" was the short circuit).
+// The default library: 17 animations, the last being Chortle No (chortle and
+// a head shake).
 size_t defaultAnimations(Animation* out, size_t cap);
 
 // Plays one animation at a time.

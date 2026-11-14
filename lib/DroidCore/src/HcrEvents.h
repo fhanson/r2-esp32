@@ -22,7 +22,7 @@ class HcrEvents {
 
   void setSoundGapMs(uint32_t soundGapMs) { soundGapMs_ = soundGapMs; }
 
-  // Auto mode (CH5 in auto, like the Mega's automation): a random sound after
+  // Auto mode (CH5 in auto): a random sound after
   // a random pause in this range. Like the button, it waits for the sound gap.
   void setAutoDelayMs(uint32_t minMs, uint32_t maxMs);
   void seed(uint32_t value) { rng_ = value != 0 ? value : 1; }

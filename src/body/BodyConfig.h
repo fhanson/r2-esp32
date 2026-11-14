@@ -55,7 +55,7 @@ constexpr int kChSound = 6;     // button set to momentary: random sound
 inline droid::ChannelCal steerCal() {
   droid::ChannelCal c;
   c.invert = true;
-  c.deadband = 0.15f;  // Padawan360 DRIVEDEADZONERANGE 20/128
+  c.deadband = 0.15f;
   return c;
 }
 
@@ -102,14 +102,12 @@ constexpr uint32_t kAutoBaudSwitchMs = 500;
 // ---------------------------------------------------------------------------
 // Drive
 // ---------------------------------------------------------------------------
-// Padawan360 DRIVESPEED1/2/3 = 50 / 100 / 127 out of 127.
+// Speed levels 1 / 2 / 3 as a fraction of full.
 constexpr float kSpeedLevels[3] = {50.0f / 127.0f, 100.0f / 127.0f, 1.0f};
 
 inline droid::MixerConfig mixerConfig() {
   droid::MixerConfig m;
   m.steeringFactor = 100.0f;
-  // To feel exactly like the Mega: curveOnSteer = false, curveOnThrottle = true,
-  // spinInPlace = false. See DriveMixer.h.
   m.curveOnSteer = true;
   m.curveOnThrottle = false;
   m.spinInPlace = false;
@@ -138,8 +136,7 @@ inline droid::RampConfig rampConfig() {
   return r;
 }
 
-// Same pulses the Mega's Servo library produced (544 / 1472 / 2400 us), so
-// the VESCs' PPM calibration in VESC Tool stays valid.
+// Matches the VESCs' PPM calibration: 544 / 1472 / 2400 us.
 inline droid::PulseRange footPulseRange() { return droid::PulseRange{544, 2400}; }
 
 // ---------------------------------------------------------------------------
@@ -220,8 +217,6 @@ enum Setting : uint8_t {
 constexpr size_t kServoSettingsPerPanel = 4;
 constexpr size_t kServoSettingsPerHolo = 3;
 
-// Levels and file numbers match the Mega. Its library ignored any WAV within
-// 5 s of the last one; here that gap applies to the sound button only.
 constexpr droid::SettingDef kSettings[] = {
     // Volumes, each separate in HCR. The handset has no volume control.
     {"hcr_vol_voc", 100, 0, 100},  // vocalizer voice (emotions, muse)

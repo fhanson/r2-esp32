@@ -21,6 +21,9 @@ when it does. The format follows [Keep a Changelog](https://keepachangelog.com).
 ## [Unreleased]
 
 ### Added
+- **Backup and restore**: one JSON file with the changed settings, every
+  animation and your servo sequences, downloaded from the page; restoring
+  replaces them on the droid. Wi-Fi name and password excluded. Page only.
 - **Servo sequence editor** (W30): make, copy, edit and delete servo
   sequences on the page, for the dome panels and utility arms. Picking a
   frame or moving a slider moves the servos live (drive disarmed only), and
@@ -99,6 +102,8 @@ when it does. The format follows [Keep a Changelog](https://keepachangelog.com).
 ### Changed
 - The access point's password moved to `src/body/Secrets.h`, kept out of git;
   the first build writes it with a random password (`tools/make_secrets.py`).
+- Dome C3 pins: the holo PCA9685 is now SDA GPIO5 / SCL GPIO6 and the SBUS
+  receiver GPIO20, so every dome wire is on one side of the Super Mini.
 
 ## [0.1.0] - 2026-11-10
 

@@ -228,7 +228,7 @@ bool decodeAnimation(const uint8_t* data, size_t length, Animation& anim) {
 }
 
 size_t defaultAnimations(Animation* out, size_t cap) {
-  // Logic Engine commands the Mega's WLogicEngine library sent.
+  // Logic Engine commands.
   const char* kLogicRandom5 = "~RTLE990505";  // random pattern, 5 s
   struct Def {
     const char* name;
@@ -275,7 +275,7 @@ size_t defaultAnimations(Animation* out, size_t cap) {
     if (d.logic) addStep(a, textStep(0, StepKind::Logic, d.logic));
     ++count;
   }
-  // Beyond the Padawan set: Chortle No, a chortle and a shake of the head.
+  // Chortle No: a chortle and a shake of the head.
   if (count < cap) {
     Animation& a = out[count];
     a = Animation{};

@@ -2,9 +2,9 @@
 // Dome C3 pins and fixed values. Settings that can change from the UI live
 // on the S3 (BodyConfig.h); the S3 sends this node its servo endpoints.
 //
-// Pins are for an ESP32-C3 Super Mini. Check them against the board before
-// wiring: GPIO 2, 8 and 9 are strapping pins, 18/19 are USB, and GPIO21 is
-// UART0's boot-message TX, so nothing listens there.
+// Pins are for an ESP32-C3 Super Mini, all on the 5-10/20/21 side. GPIO 2, 8
+// and 9 are strapping pins, 18/19 are USB, and GPIO21 is UART0's boot-message
+// TX, so nothing listens there. GPIO20 (UART0 RX) is free: the console is USB.
 
 #include <stdint.h>
 
@@ -18,13 +18,13 @@ constexpr int kPinDomeSerialTx = 7;
 constexpr uint32_t kDomeSerialBaud = 9600;
 
 // DS-650 #2 (left hand) SBUS, inverted 8E2 on UART1 RX.
-constexpr int kPinSbusRx = 6;
+constexpr int kPinSbusRx = 20;
 constexpr uint32_t kSbusLinkTimeoutMs = 100;
 constexpr uint32_t kSbusAutoBaudMs = 1000;
 
 // PCA9685 for the holo servos.
-constexpr int kPinSda = 4;
-constexpr int kPinScl = 5;
+constexpr int kPinSda = 5;
+constexpr int kPinScl = 6;
 constexpr uint8_t kPcaAddress = 0x40;
 // Channels: front X/Y, top X/Y, rear X/Y.
 constexpr uint8_t kHoloServoChannel[6] = {0, 1, 2, 3, 4, 5};
@@ -39,7 +39,7 @@ constexpr uint8_t kHoloBrightness = 120;  // 0-255; full white on 21 LEDs is abo
 constexpr int kChDomeSpin = 1;
 inline droid::ChannelCal domeSpinCal() {
   droid::ChannelCal c;
-  c.deadband = 0.12f;  // Padawan360 DOMEDEADZONERANGE 15/128
+  c.deadband = 0.12f;
   return c;
 }
 constexpr uint32_t kSpinSendMs = 50;   // to the S3 while turning (its hold is 250 ms)

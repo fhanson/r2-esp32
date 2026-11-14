@@ -2,7 +2,7 @@
 // Builds command strings for the Human Cyborg Relations (HCR) Vocalizer.
 //
 // Syntax is from docs.humancyborgrelations.com (embedded > Commands) and the
-// HumanCyborgRelationsAPI library the Mega used: every command sits in a
+// HumanCyborgRelationsAPI library: every command sits in a
 // <...> container, and one container can hold several commands separated by
 // commas. The strings here have no line ending; HcrLink adds it.
 //
